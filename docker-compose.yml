@@ -1,0 +1,55 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n-main
+    environment:
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_RUNNERS_MODE=external
+      - N8N_RUNNERS_BROKER_LISTEN_ADDRESS=0.0.0.0
+      - N8N_RUNNERS_AUTH_TOKEN=your-secret-here
+      - N8N_NATIVE_PYTHON_RUNNER=true
+      - OLLAMA_HOST=${OLLAMA_HOST:-ollama:11434}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    # etc.
+
+  task-runners:
+    image: n8nio/runners:latest
+    container_name: n8n-runners
+    environment:
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-main:5679
+      - N8N_RUNNERS_AUTH_TOKEN=your-secret-here
+      # etc.
+    depends_on:
+      - n8n
+  
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"     # optional; only needed if you want to call Ollama from your host
+    volumes:
+      - ollama_data:/root/.ollama
+
+  # Optional: pre-pull a model so it's ready when n8n starts using it
+  ollama-pull-llama:
+    image: ollama/ollama:latest
+    container_name: ollama-pull-llama
+    depends_on:
+      - ollama
+    entrypoint: /bin/sh
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    volumes:
+      - ollama_data:/root/.ollama
+    command:
+      - "-c"
+      - "sleep 3; ollama pull llama3.2"
+
+
+volumes:
+  n8n_data:
+  ollama_data:
