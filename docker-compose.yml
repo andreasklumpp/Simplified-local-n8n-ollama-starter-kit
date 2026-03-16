@@ -1,7 +1,6 @@
 services:
   n8n:
     image: n8nio/n8n:latest
-    container_name: n8n-main
     environment:
       - N8N_RUNNERS_ENABLED=true
       - N8N_RUNNERS_MODE=external
@@ -17,9 +16,8 @@ services:
 
   task-runners:
     image: n8nio/runners:latest
-    container_name: n8n-runners
     environment:
-      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n-main:5679
+      - N8N_RUNNERS_TASK_BROKER_URI=http://n8n:5679
       - N8N_RUNNERS_AUTH_TOKEN=your-secret-here
       # etc.
     depends_on:
@@ -27,7 +25,6 @@ services:
   
   ollama:
     image: ollama/ollama:latest
-    container_name: ollama
     restart: unless-stopped
     ports:
       - "11434:11434"     # optional; only needed if you want to call Ollama from your host
@@ -37,7 +34,6 @@ services:
   # Optional: pre-pull a model so it's ready when n8n starts using it
   ollama-pull-llama:
     image: ollama/ollama:latest
-    container_name: ollama-pull-llama
     depends_on:
       - ollama
     entrypoint: /bin/sh
